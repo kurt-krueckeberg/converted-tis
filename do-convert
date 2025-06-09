@@ -1,0 +1,35 @@
+#!/bin/bash
+
+INPUT_DIR=~/immanuel_church_records_1850-1905
+OUTPUT_DIR=~/converted-imm-tifs
+
+mkdir -p "$OUTPUT_DIR"
+
+# Array of contrast-stretch percentages to try (low to high clipping)
+# contrast_values=( "3%x3%" "5%x5%" "7%x7%" )
+
+for file in "$INPUT_DIR"/*.tif; do
+  [ -e "$file" ] || continue
+  filename=$(basename "$file" .tif)
+
+  echo "Processing $filename.tif ..."
+
+  for cs in "${contrast_values[@]}"; do
+    # Create output filename with contrast value suffix (remove % and x for neatness)
+    cs_clean=$(echo $cs | tr -d '%x')
+    output_file="${OUTPUT_DIR}/${filename}_cs${cs_clean}.tif"
+
+    magick "$file" \
+      -contrast-stretch "$cs" \
+      -sigmoidal-contrast 7x50% \
+      -despeckle \
+      -unsharp 1x1+0.5+0 \
+      -colorspace Gray \
+      "$output_file"
+
+    echo "  Created variation: $output_file"
+  done
+done
+
+echo "Batch processing complete."
+
